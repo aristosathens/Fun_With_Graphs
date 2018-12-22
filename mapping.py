@@ -1,5 +1,8 @@
 # Aristos Athens
 
+import sys
+import queue
+
 from typing import *
 
 from enum import Enum
@@ -69,35 +72,49 @@ class MapNode():
         else:
             raise TypeException("Neighbors must be of type dict{MapNode, float} or list[MapNode].")
 
-
     def __repr__(self):
         '''
             Generate string representation of MapNode object.
         '''
         return type(self).__name__ + ": " + self.name + " (x: " + str(self.x) + ", y: " + str(self.y) + ")"
 
+    def add_neighbors(self, neighbors : Union[List[Union['MapNode', Tuple['MapNode', float]]], Dict['MapNode', float]]):
+        '''
+            Add mutliple neighbor nodes. Calls self.add_neighbor().
+        '''
+        if type(neighbors) is dict:
+            for node, cost in neighbors.items():
+                self.add_neighbor(node, cost)
+        elif type(neighbors) is list:
+            for neighbor in neighbors:
+                if type(neighbor) is MapNode:
+                    self.add_neighbor(neighbor)
+                elif type(neighbor) is tuple:
+                    self.add_neighbor(neighbor[0], neighbor[1])
+        else:
+            raise TypeException("Invalid type passed to add_neighbors().")
 
-    def add_neighbor(self, 
-                        neighbor : 'MapNode',
-                        cost : float = None):
+
+    def add_neighbor(self, neighbor : 'MapNode', cost : float = None):
         '''
             Add new neighbor node.
         '''
         if neighbor is self:
             raise SameNodeException("Cannot add node as own neighbor.")
         elif neighbor in self.neighbors:
+            print("self: ", self)
+            print("neighbor: ", neighbor)
             raise SameNodeException("This node already exists as a neighbor. Use update_neighbor_cost() instead.")
 
         # Default cost
         if cost is None:
             cost = distance(self, neighbor)
 
-        self.neighbors.update({neighbor : cost})
+        self.neighbors[neighbor] = cost
 
+        # self.neighbors.update({neighbor : cost})
 
-    def update_neighbor_cost(self,
-                                neighbor : 'MapNode',
-                                cost : float):
+    def update_neighbor_cost(self, neighbor : 'MapNode', cost : float):
         '''
             Update the pathing cost between self and neighbor node, if node exists.
         '''
@@ -105,6 +122,20 @@ class MapNode():
             raise MissingNodeException("Cannot update neighbor node's cost. Neighbor not in node.neighbors.")
 
         self.neighbors[neighbor] = cost
+
+
+    def closest_neighbor(self, disclude_set : Collection['MapNode'] = []):
+        '''
+            Return neighbor with lowest cost that is not present in disclude_set.
+        '''
+        minima = (None, sys.maxint)
+        for key, cost in self.neighbors.items():
+            if key in disclude_set:
+                continue
+            elif cost < minima[1]:
+                minima = (key, cost)
+
+        return minima[0]
 
 
 class Path():
@@ -121,13 +152,11 @@ class Path():
         self.num_nodes = 0
         self.index = 0  # Used for iterating
 
-
     def __iter__(self) -> 'Path':
         '''
             Generate iterable representation of Path object.
         '''
         return self
-
 
     def __next__(self) -> MapNode:
         '''
@@ -140,7 +169,6 @@ class Path():
             raise StopIteration()
         self.index += 1
         return node
-
 
     def __repr__(self) -> str:
         '''
@@ -160,6 +188,8 @@ class Path():
             return None
         else:
             return self.nodes[0]
+    # Alias this method
+    first = start
 
     def end(self) -> MapNode:
         '''
@@ -169,6 +199,16 @@ class Path():
             return None
         else:
             return self.nodes[-1]
+    # Alias this method
+    last = end
+
+    def add_nodes(self, nodes : List[MapNode]):
+        '''
+            Add mutliple nodes to end of Path. Calls self.add_node().
+            Nodes must be ordered.
+        '''
+        for node in nodes:
+            self.add_node(node)
 
     def add_node(self, node : MapNode):
         '''
@@ -186,14 +226,14 @@ class Path():
             self.cost += self.end().neighbors[node]
             self.nodes.append(node)
 
-    def extend(self, new_path : 'Path'):
+    def extend(self, old_path : 'Path'):
         '''
-            Extend path with nodes from new path.
+            Extend path with nodes from old_path.
         '''
-        if new_path is self:
+        if old_path is self:
             raise SamePathException("Cannot add path to itself.")
 
-        for node in new_path:
+        for node in old_path:
                 self.add_node(node)
 
 
@@ -203,12 +243,20 @@ class Mapper():
         Node names must be unique.
     '''
 
-    def __init__(self):
+    def __init__(self, nodes : List[MapNode] = None):
         '''
             Initialize Mapper
         '''
-        self.nodes = None
+        self.nodes = nodes
 
+    def add_node(self, node : MapNode):
+        '''
+            Add node to Mapper.
+        '''
+        if node in self.nodes:
+            raise SameNodeException("Attempting to add node that is already present in Mapper object.")
+        else:
+            self.nodes.append(node)
 
     def shortest_path(self,
                         source : MapNode,
@@ -234,18 +282,56 @@ class Mapper():
         else:
             raise TypeException("SearchMethod type not defined.")
 
-
     def djikstra(self,
                     source : MapNode,
                     destination : MapNode) -> Path:
-    '''
-        Get shortest path using Djikstra's graph search method.
-    '''
+        '''
+            Get shortest path using Djikstra's graph search method.
+        '''
+        # q = self.nodes
+        p = Path()
+        p.add_node(source)
+        q = queue.PriorityQueue()
+        q.put((0, p))
+        seen = []
+
+        while not q.empty():
+            current_path = q.get()[1]
+            current_node = current_path.last()
+            if current_node is destination:
+                return current_path
+            if current_node in seen:
+                continue
+            seen.append(current_node)
+
+            for next_node in current_node.neighbors:
+                new_path = current_path
+                new_path.add_node(next_node)
+                q.put((new_path.cost, new_path))
+
+# pQueue = PriorityQueue()
+# pQueue.enqueue(newPath(startNode), 0)
+# seen = Set();
+# while !pQueue.isEmpty():
+#  currPath = pQueue.dequeue()
+#  currState = last(currPath);
+#  if(currState is goal) return currPath;
+#  if(seen contains currState) continue;
+#  seen.add(currState);
+#  for nextState in getNextStates(currState)
+#  path = newPath(currPath, nextState);
+#  pQueue.enqueue(path, getCost(path));
+#  }
+# }
+
+
+
+
 
 
 # ---------------------------------- Helpers ----------------------------------- #
 
-def distance(start : MapNode, end : MapNode):
+def distance(start : MapNode, end : MapNode) -> float:
     '''
         Find Euclidean distance between MapNodes.
     '''
