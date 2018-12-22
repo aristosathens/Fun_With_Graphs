@@ -11,27 +11,26 @@ def main():
     A = MapNode(11, 15, name = "NodeA")
     B = MapNode(13, 17, name = "NodeB")
     C = MapNode(18, 15, name = "NodeC")
-    
-    # D = MapNode(12, 1, name = "NodeD")
-
-    # Z = MapNode(11.5, 10, name = "NodeZ")
+    D = MapNode(12, 1, name = "NodeD")
+    Z = MapNode(11.5, 10, name = "NodeZ")
 
     A.add_neighbor(B)
+    B.add_neighbors([A, C, Z])
+    Z.add_neighbor(D)
+    C.add_neighbor(B)
+
+
     print("A neighbors: ", A.neighbors)
-    # B.add_neighbor(A)
-    # B.add_neighbor(C)
-    B.add_neighbors([A, C])
     print("B neighbors: ", B.neighbors)
     print("C neighbors: ", C.neighbors)
-    # Z.add_neighbor(D)
-    # print("Z neighbors: ", Z.neighbors)
-
-    # print("C neighbors: ", C.neighbors)
-
-    # C.add_neighbor(D)
+    print("D neighbors: ", D.neighbors)
+    print("Z neighbors: ", Z.neighbors)
 
 
-    nodes = [A, B, C, D]
+
+
+
+    nodes = [A, B, C, D, Z]
 
     mapper = Mapper(nodes)
 

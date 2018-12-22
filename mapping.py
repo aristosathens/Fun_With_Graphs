@@ -1,6 +1,7 @@
 # Aristos Athens
 
 import sys
+import copy
 import queue
 
 from typing import *
@@ -63,14 +64,7 @@ class MapNode():
         self.y = y
         self.name = name
         self.neighbors = {}
-
-        if type(neighbors) is dict:
-            self.neighbors = neighbors
-        elif type(neighbors) is list:
-            for n in neighbors:
-                self.add_neighbor(n)
-        else:
-            raise TypeException("Neighbors must be of type dict{MapNode, float} or list[MapNode].")
+        self.add_neighbors(neighbors)
 
     def __repr__(self):
         '''
@@ -94,7 +88,6 @@ class MapNode():
         else:
             raise TypeException("Invalid type passed to add_neighbors().")
 
-
     def add_neighbor(self, neighbor : 'MapNode', cost : float = None):
         '''
             Add new neighbor node.
@@ -102,8 +95,6 @@ class MapNode():
         if neighbor is self:
             raise SameNodeException("Cannot add node as own neighbor.")
         elif neighbor in self.neighbors:
-            print("self: ", self)
-            print("neighbor: ", neighbor)
             raise SameNodeException("This node already exists as a neighbor. Use update_neighbor_cost() instead.")
 
         # Default cost
@@ -111,8 +102,6 @@ class MapNode():
             cost = distance(self, neighbor)
 
         self.neighbors[neighbor] = cost
-
-        # self.neighbors.update({neighbor : cost})
 
     def update_neighbor_cost(self, neighbor : 'MapNode', cost : float):
         '''
@@ -123,12 +112,11 @@ class MapNode():
 
         self.neighbors[neighbor] = cost
 
-
     def closest_neighbor(self, disclude_set : Collection['MapNode'] = []):
         '''
             Return neighbor with lowest cost that is not present in disclude_set.
         '''
-        minima = (None, sys.maxint)
+        minima = (None, sys.maxsize)
         for key, cost in self.neighbors.items():
             if key in disclude_set:
                 continue
@@ -143,14 +131,21 @@ class Path():
         Path class
     '''
 
-    def __init__(self):
+    def __init__(self, old_path : 'Path' = None, new_node : MapNode = None):
         '''
             Initialize Path
+            To use as copy constructor, pass in old_path, with optional new_node. 
         '''
         self.nodes = []
         self.cost = 0
         self.num_nodes = 0
         self.index = 0  # Used for iterating
+
+        if old_path is not None:
+            for node in old_path:
+                self.add_node(node)
+        if new_node is not None:
+            self.add_node(new_node)
 
     def __iter__(self) -> 'Path':
         '''
@@ -218,9 +213,7 @@ class Path():
             self.num_nodes = 1
             self.nodes.append(node)
         else:
-            if node not in self.end().neighbors:
-                print("end: ", self.end())
-                print("node: ", node)
+            if not node in self.end().neighbors:
                 raise NotANeighborException("Can't add this node to path. Input node is not neighbor of end node.")
             self.num_nodes += 1
             self.cost += self.end().neighbors[node]
@@ -288,11 +281,8 @@ class Mapper():
         '''
             Get shortest path using Djikstra's graph search method.
         '''
-        # q = self.nodes
-        p = Path()
-        p.add_node(source)
         q = queue.PriorityQueue()
-        q.put((0, p))
+        q.put((0, Path(new_node = source)))
         seen = []
 
         while not q.empty():
@@ -305,26 +295,10 @@ class Mapper():
             seen.append(current_node)
 
             for next_node in current_node.neighbors:
-                new_path = current_path
-                new_path.add_node(next_node)
-                q.put((new_path.cost, new_path))
-
-# pQueue = PriorityQueue()
-# pQueue.enqueue(newPath(startNode), 0)
-# seen = Set();
-# while !pQueue.isEmpty():
-#  currPath = pQueue.dequeue()
-#  currState = last(currPath);
-#  if(currState is goal) return currPath;
-#  if(seen contains currState) continue;
-#  seen.add(currState);
-#  for nextState in getNextStates(currState)
-#  path = newPath(currPath, nextState);
-#  pQueue.enqueue(path, getCost(path));
-#  }
-# }
-
-
+                if next_node in seen:
+                    continue
+                new_path = Path(current_path, next_node)
+                q.put((1/new_path.cost, new_path, seen))
 
 
 
