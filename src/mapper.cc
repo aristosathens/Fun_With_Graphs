@@ -6,6 +6,7 @@
 
 #include "mapper.h"
 #include <queue>
+#include <unordered_set>
 
 //
 // Using
@@ -91,6 +92,7 @@ void Path::add_node(Node* new_node)
 // Graph class methods
 //
 
+// Get shortest Path. Throw exception if no path exists.
 Path* Graph::shortest_path(Node* start, Node* end, SearchMethod method = Djikstra)
 {
     switch (method) {
@@ -101,12 +103,30 @@ Path* Graph::shortest_path(Node* start, Node* end, SearchMethod method = Djikstr
     }
 }
 
-Path* Graph::djikstras(Node* start, Node* end)
+Path* Graph::djikstras(Node* start, Node* destination)
 {
-    priority_queue<Path*> pq();
-    pq.push(Path())
+    priority_queue<Path*> pq;
+    pq.push(new Path(start));
+    unordered_set<Node*> seen;
 
-    
+    while (!pq.empty()) {
+        Path* current_path = pq.top();
+        pq.pop();
+        Node* current_node = current_path->last();
+        if (current_node == destination) {
+            return current_path;
+        }
+        if (seen.find(current_node) != seen.end()) {
+            continue;
+        }
+        seen.insert(current_node);
+        for (auto node_pair : current_node->neighbors) {
+            Path new_path = *current_path;
+            new_path.add_node(node_pair.first);
+            pq.push(&new_path);
+        }
+    }
+    throw runtime_error("No path found between nodes using Djikstra's search method.");
 }
 
 

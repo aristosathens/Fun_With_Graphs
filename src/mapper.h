@@ -50,11 +50,7 @@ class Node
     void add_neighbor(Node*, float);
     bool has_neighbor(Node*) const;
     float get_neighbor_cost(Node*) const;
-
-    //
-    // Private
-    //
-    private:
+    
     std::string name;
     Point location;
     std::map<Node*, float> neighbors;
@@ -66,8 +62,10 @@ class Path
     // Public
     //
     public:
-    // Path();
-    Path(Node* n) : nodes(std::vector<Node*> {n});
+    Path();
+    Path(Node* n) : nodes(std::vector<Node*> {n}) {};
+    Path(Path* old) : nodes(old->nodes), total_cost(old->total_cost) {};
+    
     float cost() const { return total_cost; }
     size_t num_nodes() const { return nodes.size(); }
 
