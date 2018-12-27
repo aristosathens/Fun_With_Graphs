@@ -235,6 +235,7 @@ Path* Graph::shortest_path(Node* start, Node* end, SearchMethod method /* = Djik
     return ptr;
 }
 
+// Find shortest path using Djikstra's algorithm.
 Path* Graph::djikstras(Node* start, Node* destination) const
 {
     priority_queue<Path*> pq;
