@@ -16,12 +16,11 @@
 #include <unordered_set>
 #include <iostream>
 
-
 //
 // Define
 //
 
-#define NUM_TO_LOAD 2000
+#define DEFAULT_NUM_TO_LOAD 2000
 
 //
 // Enum
@@ -117,7 +116,7 @@ class Path
     // Access methods
     float cost() const { return total_cost; }
     size_t num_nodes() const { return nodes.size(); }
-    std::string to_string() const;
+    std::string string() const;
 
     Node* start() const;
     inline Node* first() const { return start(); }
@@ -160,7 +159,7 @@ class Graph
     Path* shortest_path(Node*, Node*, SearchMethod = Djikstra) const;
 
     // Modifier methods
-    void load_dataset(std::string, DataSetType, size_t = NUM_TO_LOAD);
+    void load_dataset(std::string, DataSetType, size_t = DEFAULT_NUM_TO_LOAD);
 
     template<typename C>
     void add_nodes(C container) { for (auto item : container) { add_node(item); } };

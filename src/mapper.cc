@@ -11,7 +11,7 @@
 #include <unordered_set>
 #include <fstream>
 #include <sstream>
-
+#include <string>
 
 //
 // Using
@@ -105,6 +105,16 @@ void Path::add_node(Node* new_node)
     } else {
         throw runtime_error("Cannot add node to Path. Last node does not contain new_node as neighbor.");
     }
+}
+
+// Get string representation of Path object.
+string Path::string() const
+{
+    std::string str = "Path Object -- Cost: " + to_string(cost()) + ", Number of nodes: " + to_string(num_nodes()) + "\n";
+    for (auto node : nodes) {
+        str += "--> " + to_string(node->index) + " ";
+    }
+    return str;
 }
 
 //

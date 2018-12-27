@@ -25,10 +25,8 @@ int main()
     string file_name = "./../data/USA-road-d.NY.gr";
     Graph mapper(true);
     mapper.load_dataset(file_name, DIMACS, num_to_load);
-    cout << "here" << endl << flush;
     Path* p = mapper.shortest_path(start_index, end_index);
-    cout << "there" << endl << flush;
-    cout << "Path cost: " << p->cost() << endl ;
-    cout << flush;
+    // println(p->string());
+
     return 0;
 }
