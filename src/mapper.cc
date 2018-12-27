@@ -173,6 +173,7 @@ void Graph::load_dataset(string file_name, DataSetType data_set_type, size_t num
     if (verbose) println("Finished loading dataset.");
 }
 
+// Load DIMACS dataset.
 void Graph::load_DIMACS_dataset(string file_name, size_t num_to_load)
 {
     ifstream file(file_name);
