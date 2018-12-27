@@ -262,3 +262,4 @@ Path* Graph::djikstras(Node* start, Node* destination) const
     }
     throw runtime_error("No path found between nodes using Djikstra's search method.");
 }
+
