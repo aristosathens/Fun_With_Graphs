@@ -14,18 +14,48 @@
 #include <vector>
 #include <string>
 #include <unordered_set>
+#include <iostream>
+
 
 //
-// Types
+// Define
 //
+
+#define NUM_TO_LOAD 2000
+
+//
+// Enum
+//
+
+enum DataSetType
+{
+    DIMACS,
+};
 
 enum SearchMethod
 {
     BFS,
     DFS,
     Djikstra,
-    A_Star
+    A_Star,
 };
+
+//
+// Helpers
+//
+
+template<typename T>
+inline void print(T val)
+{
+    std::cout << val << std::flush;
+}
+
+template<typename T>
+inline void println(T val)
+{
+    print(val);
+    print("\n");
+}
 
 //
 // Classes
@@ -33,8 +63,18 @@ enum SearchMethod
 
 class Point
 {
+    //
+    // Public
+    //
     public:
-    Point(float in_x, float in_y) : x(in_x), y(in_y) { };
+    // Constructor
+    Point() {};
+    Point(float in_x, float in_y) : x(in_x), y(in_y) {};
+
+    // Access methods
+    float distance_to(Point) const;
+    float distance_to(Point*) const;
+
     float x;
     float y;
 };
@@ -45,12 +85,19 @@ class Node
     // Public
     //
     public:
-    Node();
+    // Constructor
+    Node() {};
+    Node(size_t in_index) : index(in_index) {};
+    
+    // Access methods
+    float get_neighbor_cost(Node*) const;
+    bool has_neighbor(Node*) const;
+
+    // Modifier methods
     void add_neighbors(std::map<Node*, float>);
     void add_neighbor(Node*, float);
-    bool has_neighbor(Node*) const;
-    float get_neighbor_cost(Node*) const;
     
+    size_t index;
     std::string name;
     Point location;
     std::map<Node*, float> neighbors;
@@ -62,26 +109,31 @@ class Path
     // Public
     //
     public:
-    Path();
+    // Constructor
+    Path() {};
     Path(Node* n) : nodes(std::vector<Node*> {n}) {};
     Path(Path* old) : nodes(old->nodes), total_cost(old->total_cost) {};
     
+    // Access methods
     float cost() const { return total_cost; }
     size_t num_nodes() const { return nodes.size(); }
+    std::string to_string() const;
 
     Node* start() const;
-    Node* first() const { return start(); }
-    Node* front() const { return start(); }
+    inline Node* first() const { return start(); }
+    inline Node* front() const { return start(); }
 
     Node* end() const;
-    Node* last() const { return end(); }
-    Node* back() const { return end(); }
+    inline Node* last() const { return end(); }
+    inline Node* back() const { return end(); }
 
+    // Modifier methods
     template<typename C>
     void add_nodes(C container) { for (auto item : container) { add_node(item); } }
     void add_node(Node*);
 
-    bool operator<(const Path& rhs) { return cost() < rhs.cost() ; }
+    // Operators
+    bool operator<(const Path& rhs) { return (1.0 / cost()) < (1.0 / rhs.cost()) ; }
 
     //
     // Private
@@ -97,16 +149,32 @@ class Graph
     // Public
     //
     public:
+    // Constructor
+    Graph() {};
+    Graph(bool v) : verbose(v) {};
+
+    // Access methods
+    bool contains_index(size_t, Node** = NULL) const;
+    bool contains_node(Node*) const;
+    Path* shortest_path(size_t, size_t, SearchMethod = Djikstra) const;
+    Path* shortest_path(Node*, Node*, SearchMethod = Djikstra) const;
+
+    // Modifier methods
+    void load_dataset(std::string, DataSetType, size_t = NUM_TO_LOAD);
+
     template<typename C>
     void add_nodes(C container) { for (auto item : container) { add_node(item); } };
     void add_node(Node*);
-
-    Path* shortest_path(Node*, Node*, SearchMethod);
-    Path* djikstras(Node*, Node*);
 
     //
     // Private
     //
     private:
+    bool verbose;
     std::unordered_set<Node*> nodes;
+    std::map<size_t, Node*> index_map;
+
+    Path* djikstras(Node*, Node*) const;
+
+    void load_DIMACS_dataset(std::string, size_t);
 };

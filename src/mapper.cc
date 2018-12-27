@@ -5,14 +5,33 @@
 //
 
 #include "mapper.h"
+
+#include <math.h>
 #include <queue>
 #include <unordered_set>
+#include <fstream>
+#include <sstream>
+
 
 //
 // Using
 //
 
 using namespace::std;
+
+//
+// Point class methods
+//
+
+float Point::distance_to(Point p) const
+{
+    return pow(pow(x - p.x, 2) + pow(y - p.y, 2), 0.5);
+}
+
+float Point::distance_to(Point* p) const
+{
+    return pow(pow(x - p->x, 2) + pow(y - p->y, 2), 0.5);
+}
 
 //
 // Node class methods
@@ -92,18 +111,120 @@ void Path::add_node(Node* new_node)
 // Graph class methods
 //
 
-// Get shortest Path. Throw exception if no path exists.
-Path* Graph::shortest_path(Node* start, Node* end, SearchMethod method = Djikstra)
+// Add node to graph.
+void Graph::add_node(Node* node)
 {
-    switch (method) {
-    case Djikstra:
-        return djikstras(start, end);
-    default:
-        throw runtime_error("Passed in SearchMethod is not implemented.");
+    nodes.insert(node);
+    index_map[node->index] = node;
+}
+
+// Check if Graph has node.
+bool Graph::contains_node(Node* node) const
+{
+    if (nodes.find(node) != nodes.end()) {
+        return true;
+    } else {
+        return false;
     }
 }
 
-Path* Graph::djikstras(Node* start, Node* destination)
+// Check if Graph has node with matching index. If ptr not NULL, put found node into ptr.
+bool Graph::contains_index(size_t index, Node** ptr /* = NULL */) const
+{
+    if (index_map.empty()) {
+        return false;
+    }
+    auto node = index_map.find(index);
+    if (node != index_map.end()) {
+        if (ptr != NULL) {
+            auto val = (*node).second;
+            if (val == NULL) {
+                throw runtime_error("Node* value in index_map is NULL.");
+            }
+            *ptr = val;
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+
+// Load dataset.
+void Graph::load_dataset(string file_name, DataSetType data_set_type, size_t num_to_load /* = NUM_TO_LOAD */)
+{
+    if (verbose) print("Loading dataset...");
+    switch (data_set_type) {
+    case DIMACS:
+        load_DIMACS_dataset(file_name, num_to_load);
+        break;
+    default:
+        throw runtime_error("No implementation for that DataSetType.");
+    }
+    if (verbose) println("Finished loading dataset.");
+}
+
+void Graph::load_DIMACS_dataset(string file_name, size_t num_to_load)
+{
+    ifstream file(file_name);
+    string line, first_char;
+    size_t index_1, index_2, num_loaded = 0;
+    float cost;
+    while (getline(file, line) && num_loaded <= num_to_load) {
+        // Read line from file, read data from line.
+        istringstream ss(line); 
+        ss >> first_char;
+        if (first_char != "a") {
+            continue;
+        }
+        ss >> index_1;
+        ss >> index_2;
+        ss >> cost;
+        // If nodes already exist, get them. Else, create new objects and add to Graph.
+        Node *start_node, *end_node;
+        if (!contains_index(index_1, &start_node)) {
+            start_node = new Node(index_1);
+            add_node(start_node);
+        }
+        if (!contains_index(index_2, &end_node)) {
+            end_node = new Node(index_2);
+            add_node(end_node);
+        }
+        // Add edge.
+        start_node->add_neighbor(end_node, cost);
+        num_loaded++;
+    }
+}
+
+// Get shortest Path. Throw exception if invalid nodes or no path exists.
+Path* Graph::shortest_path(size_t start_index, size_t end_index, SearchMethod method /* = Djikstra*/) const
+{
+    Node *start_node, *end_node;
+    if (!contains_index(start_index, &start_node) || !contains_index(end_index, &end_node)) {
+        throw runtime_error("Passed in node index that does not exit in this graph.");
+    }
+    return shortest_path(start_node, end_node, method);
+}
+
+// Get shortest Path. Throw exception if invalid nodes or no path exists.
+Path* Graph::shortest_path(Node* start, Node* end, SearchMethod method /* = Djikstra */) const
+{
+    if (verbose) print("Finding shortest path...");
+    if (!contains_node(start) || !contains_node(end)) {
+        throw runtime_error("Passed in node that does not exist in this graph.");
+    }
+    Path* ptr;
+    switch (method) {
+    case Djikstra:
+        ptr = djikstras(start, end);
+        break;
+    default:
+        throw runtime_error("Passed in SearchMethod is not implemented.");
+    }
+    if (verbose) println("Finished finding shortest path.");
+    return ptr;
+}
+
+Path* Graph::djikstras(Node* start, Node* destination) const
 {
     priority_queue<Path*> pq;
     pq.push(new Path(start));
@@ -121,17 +242,11 @@ Path* Graph::djikstras(Node* start, Node* destination)
         }
         seen.insert(current_node);
         for (auto node_pair : current_node->neighbors) {
-            Path new_path = *current_path;
-            new_path.add_node(node_pair.first);
-            pq.push(&new_path);
+            Path* new_path = new Path;
+            *new_path = *current_path;
+            new_path->add_node(node_pair.first);
+            pq.push(new_path);
         }
     }
     throw runtime_error("No path found between nodes using Djikstra's search method.");
-}
-
-
-
-int main()
-{
-
 }
