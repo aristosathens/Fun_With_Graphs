@@ -1,6 +1,8 @@
 // Aristos Athens
 
 #include "mapper.h"
+#include "mapper_graphics.h"
+
 #include <iostream>
 #include <cstdlib>
 
@@ -27,8 +29,14 @@ void test_SNAP(size_t start_index, size_t end_index, size_t num_to_load)
     println(p->string());
 }
 
-int main(int argc, char** argv)
+int main(int argc, char* argv[])
 {
+    Graphics g;
+    g.setup_window();
+    println("Entering main.");
+    // test_graphics();
+    return 0;
+
     size_t num_to_load;
     size_t start_index;
     size_t end_index;
@@ -56,8 +64,6 @@ int main(int argc, char** argv)
     // print("Destination node number: ");
     // cin >> end_index;
     // print("");
-
-
 
     return 0;
 }
