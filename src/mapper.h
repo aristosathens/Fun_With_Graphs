@@ -4,7 +4,8 @@
 // Compiler Guard
 //
 
-#pragma once
+#ifndef MAPPER_H
+#define MAPPER_H
 
 //
 // Include
@@ -21,6 +22,7 @@
 //
 
 #define DEFAULT_NUM_TO_LOAD 2000
+#define DEFAULT_COST 1.0
 
 //
 // Enum
@@ -29,6 +31,7 @@
 enum DataSetType
 {
     DIMACS,
+    SNAP,
 };
 
 enum SearchMethod
@@ -71,6 +74,7 @@ class Point
     Point(float in_x, float in_y) : x(in_x), y(in_y) {};
 
     // Access methods
+    std::string string(bool show_type = false) const;
     float distance_to(Point) const;
     float distance_to(Point*) const;
 
@@ -86,9 +90,14 @@ class Node
     public:
     // Constructor
     Node() {};
-    Node(size_t in_index) : index(in_index) {};
+    Node(size_t in_index) : index(in_index), name(""), location(NULL) {};
+    Node(size_t in_index, std::string in_name) : index(in_index), name(in_name), location(NULL) {};
+    Node(size_t in_index, float in_x, float in_y) : index(in_index), name("") { location = new Point(in_x, in_y); };
+    // Desctructor
+    ~Node() { if (location != NULL) delete location; };
     
     // Access methods
+    std::string string(bool index_only = false) const;
     float get_neighbor_cost(Node*) const;
     bool has_neighbor(Node*) const;
 
@@ -98,7 +107,7 @@ class Node
     
     size_t index;
     std::string name;
-    Point location;
+    Point* location;
     std::map<Node*, float> neighbors;
 };
 
@@ -112,11 +121,12 @@ class Path
     Path() {};
     Path(Node* n) : nodes(std::vector<Node*> {n}) {};
     Path(Path* old) : nodes(old->nodes), total_cost(old->total_cost) {};
+    Path(Path* old, Node* n) : nodes(old->nodes), total_cost(old->total_cost) { add_node(n); };
     
     // Access methods
     float cost() const { return total_cost; }
     size_t num_nodes() const { return nodes.size(); }
-    std::string string() const;
+    std::string string(bool index_only = false) const;
 
     Node* start() const;
     inline Node* first() const { return start(); }
@@ -151,6 +161,8 @@ class Graph
     // Constructor
     Graph() {};
     Graph(bool v) : verbose(v) {};
+    // Desctructor
+    ~Graph();
 
     // Access methods
     bool contains_index(size_t, Node** = NULL) const;
@@ -174,6 +186,16 @@ class Graph
     std::map<size_t, Node*> index_map;
 
     Path* djikstras(Node*, Node*) const;
+    Path* DFS(Node*, Node*) const;
 
+    void load_edge(size_t, size_t, float);
     void load_DIMACS_dataset(std::string, size_t);
+    void load_SNAP_dataset(std::string, size_t);
 };
+
+
+//
+// End compiler guard
+//
+
+#endif
